@@ -1,41 +1,34 @@
 #include "world.h"
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
-Body* bodies = NULL;
-int bodyCount = 0;
+opBody* opBodies = NULL;
+int opBodyCount = 0;
 
-Body* CreateBody()
+opBody* CreateBody()
 {
-	//Allocate memory for a new Body using malloc.
-	Body* newBody = (Body*)malloc(sizeof(Body)); //*bodyCount + 1
-	
-	//Assert that the allocation was successful.
-	assert(newBody != NULL);
+	opBody* newBody = (opBody*)malloc(sizeof(opBody)); //*opBodyCount + 1
+	assert(newBody);
 
-	//Set the new body’s prev pointer to NULL and its next pointer to the current head of the list(bodies).
+	memset(newBody, 0, sizeof(opBody));
+
 	newBody->prev = NULL;
-	newBody->next = bodies;
+	newBody->next = opBodies; //set to current head
 
-	//If the list is not empty, update the prev pointer of the current head.
-	if (bodies != NULL)
+	if (opBodies != NULL)
 	{
-		bodies->prev = bodies;
+		opBodies->prev = opBodies; //set to current head
 	}
-	
-	//Set the bodies to the new Body
-	bodies = newBody;
 
-	//Increment body count
-	bodyCount++;
+	opBodies = newBody; //head is set to new body
+	opBodyCount++;
 	
-	
-	//Return the new Body.
 	return newBody;
 }
-void DestroyBody(Body* body)
+void DestroyBody(opBody* body)
 {
-	//Assert if provided Body is not NULL
+	//Assert if provided opBody is not NULL
 	assert(body != NULL);
 
 	//If 'prev' is not NULL, set 'prev->next' to 'body->next'
@@ -57,7 +50,7 @@ void DestroyBody(Body* body)
 	}
 
 	//Decrement body count
-	bodyCount--;
+	opBodyCount--;
 
 	//Free the body
 	free(body);

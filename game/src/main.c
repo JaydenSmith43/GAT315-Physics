@@ -1,8 +1,10 @@
 #include "body.h"
 #include "mathf.h"
 #include "raylib.h"
+
 #include "raymath.h"
 #include "world.h"
+#include "integrated.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -11,14 +13,14 @@
 
 int main(void)
 {
-	InitWindow(1280, 720, "Phsyics Engine");
+	InitWindow(1280, 720, "Physics Engine");
 	SetTargetFPS(60);
 
-	//Body* bodies = new Body[20];
-	//Body* bodies = (Body*)malloc(sizeof(Body) * MAX_BODIES);
-	//assert(bodies != NULL);
+	//opBody* opBodies = new opBody[20];
+	//opBody* opBodies = (opBody*)malloc(sizeof(opBody) * MAX_BODIES);
+	//assert(opBodies != NULL);
 
-	//int bodyCount = 0; //default to 0
+	//int opBodyCount = 0; //default to 0
 
 	// Game Loop
 	while (!WindowShouldClose())
@@ -28,13 +30,32 @@ int main(void)
 		float fps = (float)GetFPS();
 
 		Vector2 position = GetMousePosition();
-		if (IsMouseButtonPressed(0))
+		if (IsMouseButtonDown(0))
 		{
-			CreateBody();
-			bodies->position = position;
-			bodies->velocity = CreateVector2(GetRandomFloatValue(-5, 5), GetRandomFloatValue(-5, 5));
-			bodyCount++;
+			opBody* body = CreateBody();
+			body->position = position;
+			body->mass = GetRandomFloatValue(1,5);
+		} //ApplyForce(body, CreateVector2(GetRandomFloatValue(-50, 50), GetRandomFloatValue(-50, 50)));
+
+		// apply force opBodies
+		opBody* body = opBodies;
+		while (body)
+		{
+			ApplyForce(body, CreateVector2(0, -50));
+			body = body->next;
 		}
+
+		// update opBodies
+		body = opBodies;
+		while (body)
+		{
+			//body->position = Vector2Add(body->position, body->velocity);
+			ExplicitEuler(body, dt);
+			ClearForce(body);
+			body = body->next; // get next body
+		}
+
+		
 
 		// Render
 		BeginDrawing();
@@ -45,22 +66,11 @@ int main(void)
 		
 		DrawCircle((int)position.x, (int)position.y, 10, YELLOW);//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
-		//for (int i = 0; i < bodyCount; i++)
-		//{
-		//	bodies[i].position = Vector2Add(bodies[i].position, bodies[i].velocity);
-
-		//	DrawCircle((int)bodies[i].position.x, (int)bodies[i].position.y, 10, RED);
-		//}
-
-		// update / draw bodies
-		Body* body = bodies;
+		// draw opBodies
+		body = opBodies;
 		while (body) // do while we have a valid pointer, will be NULL at the end of the list
 		{
-			// update body position
-			body->position = Vector2Add(body->position, body->velocity);
-			// draw body
-			DrawCircle((int)body->position.x, (int)body->position.y, 10, RED);
-
+			DrawCircle((int)body->position.x, (int)body->position.y, body->mass, RED);
 			body = body->next; // get next body
 		}
 		
@@ -68,7 +78,7 @@ int main(void)
 	}
 
 	CloseWindow();
-	free(bodies);
+	free(opBodies);
 
 	return 0;
 }

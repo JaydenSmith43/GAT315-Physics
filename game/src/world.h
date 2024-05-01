@@ -1,9 +1,10 @@
 #pragma once
 #include "body.h"
 
-extern Body* bodies; //so that it is created one time when included in multiple places
-extern int bodyCount;
+extern opBody* opBodies; //so that it is created one time when included in multiple places
+extern int opBodyCount;
 
-Body* CreateBody();
-void DestroyBody(Body* body);
+opBody* CreateBody();
+void DestroyBody(opBody* body);
+void DestroyAllBodies();
 //declare functions only once in world.c
