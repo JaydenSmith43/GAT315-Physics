@@ -1,6 +1,9 @@
 #include "body.h"
 #include "mathf.h"
 #include "raylib.h"
+#include "force.h"
+#include "render.h"
+#include "editor.h"
 
 #include "raymath.h"
 #include "world.h"
@@ -16,11 +19,9 @@ int main(void)
 	InitWindow(1280, 720, "Physics Engine");
 	SetTargetFPS(60);
 
-	//opBody* opBodies = new opBody[20];
-	//opBody* opBodies = (opBody*)malloc(sizeof(opBody) * MAX_BODIES);
-	//assert(opBodies != NULL);
-
-	//int opBodyCount = 0; //default to 0
+	// Initialize World
+	opGravity = (Vector2){ 0, -1 }; //0,30
+	int selection = 0;
 
 	// Game Loop
 	while (!WindowShouldClose())
@@ -29,33 +30,89 @@ int main(void)
 		float dt = GetFrameTime();
 		float fps = (float)GetFPS();
 
-		Vector2 position = GetMousePosition();
-		if (IsMouseButtonDown(0))
+		if (IsKeyPressed('W'))
 		{
-			opBody* body = CreateBody();
-			body->position = position;
-			body->mass = GetRandomFloatValue(1,5);
-		} //ApplyForce(body, CreateVector2(GetRandomFloatValue(-50, 50), GetRandomFloatValue(-50, 50)));
+			selection++;
+
+			if (selection == 3)
+			{
+				selection = 0;
+			}
+		}
+		float angle;
+		Vector2 position = GetMousePosition();
+		opScreenZoom += GetMouseWheelMove() * 0.2f;
+		opScreenZoom = Clamp(opScreenZoom, 0.1f, 10);
+
+		UpdateEditor(position);
+		if (IsMouseButtonPressed(0))
+		{
+			switch (selection)
+			{
+				case 0:
+					for (int i = 0; i < 1; i++)
+					{
+						opBody* body = CreateBody();
+						body->position = ConvertScreenToWorld(position);
+						body->mass = GetRandomFloatValue(opEditorData.MassMinValue, opEditorData.MassMaxValue);
+						body->inverseMass = 1 / body->mass;
+						body->type = BT_DYNAMIC;
+						body->damping = 0.99f;
+						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
+						body->gravityScale = 20;//
+						//ApplyForce(body, (Vector2) { GetRandomFloatValue(-200, 200), GetRandomFloatValue(-500, -1000) }, FM_VELOCITY);//
+					}
+					break;
+				case 1:
+					for (int i = 0; i < 100; i++)
+					{
+						opBody* body = CreateBody();
+						body->position = position;
+						body->mass = GetRandomFloatValue(1, 5);
+						body->inverseMass = 1 / body->mass;
+						body->type = BT_DYNAMIC;
+						body->damping = 0.99f;
+						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
+						body->gravityScale = 20;//
+						Vector2 force = Vector2Scale(GetVector2FromAngle(GetRandomFloatValue(0, 360) * DEG2RAD), GetRandomFloatValue(1000, 2000));
+						ApplyForce(body, force, FM_IMPULSE);//	
+					}
+					break;
+				case 2:
+					angle = GetRandomFloatValue(0, 360);
+					for (int i = 0; i < 100; i++)
+					{
+						opBody* body = CreateBody();
+						body->position = position;
+						body->mass = GetRandomFloatValue(0.1f, 1);
+						body->inverseMass = 1 / body->mass;
+						body->type = BT_DYNAMIC;
+						body->damping = 0.99f;
+						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
+						body->gravityScale = 20;//
+						Vector2 force = Vector2Scale(GetVector2FromAngle(angle + GetRandomFloatValue(-30, 30) * DEG2RAD), GetRandomFloatValue(1000, 2000));
+						ApplyForce(body, force, FM_IMPULSE);//	
+					}
+					break;
+			}
+
+		}
+
+		//opBody* body = opBodies;
+		//while (body)
+		//{
+		//	ApplyForce(body, CreateVector2(0, 30), FM_FORCE);
+		//	body = body->next;
+		//}
 
 		// apply force opBodies
-		opBody* body = opBodies;
-		while (body)
-		{
-			ApplyForce(body, CreateVector2(0, -50));
-			body = body->next;
-		}
+		ApplyGravitation(opBodies, opEditorData.GravitationValue);
 
 		// update opBodies
-		body = opBodies;
-		while (body)
+		for (opBody* body = opBodies; body != NULL; body = body->next) //while not null
 		{
-			//body->position = Vector2Add(body->position, body->velocity);
-			ExplicitEuler(body, dt);
-			ClearForce(body);
-			body = body->next; // get next body
+			Step(body, dt);
 		}
-
-		
 
 		// Render
 		BeginDrawing();
@@ -63,16 +120,18 @@ int main(void)
 
 		DrawText(TextFormat("FPS: %.2f (%.2fms)", fps, 1000/fps), 10, 10, 20, LIME); //print format
 		DrawText(TextFormat("FRAME: %.4f ", dt), 10, 30, 20, LIME);
+		DrawText(TextFormat("BODIES: %i ", opBodyCount), 10, 50, 20, LIME);
 		
 		DrawCircle((int)position.x, (int)position.y, 10, YELLOW);//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
 		// draw opBodies
-		body = opBodies;
-		while (body) // do while we have a valid pointer, will be NULL at the end of the list
+		for (opBody* body = opBodies; body != NULL; body = body->next) // do while we have a valid pointer, will be NULL at the end of the list
 		{
-			DrawCircle((int)body->position.x, (int)body->position.y, body->mass, RED);
-			body = body->next; // get next body
+			Vector2 screen = ConvertWorldToScreen(body->position);
+			DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass), body->color);
 		}
+
+		DrawEditor();
 		
 		EndDrawing();
 	}

@@ -1,10 +1,13 @@
 #include "world.h"
+#include "body.h"
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
 opBody* opBodies = NULL;
 int opBodyCount = 0;
+Vector2 opGravity;
 
 opBody* CreateBody()
 {
@@ -54,4 +57,9 @@ void DestroyBody(opBody* body)
 
 	//Free the body
 	free(body);
+}
+
+void DestroyAllBodies()
+{
+	//free(opBodies);
 }
