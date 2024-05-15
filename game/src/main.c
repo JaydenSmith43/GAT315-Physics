@@ -2,6 +2,7 @@
 #include "mathf.h"
 #include "raylib.h"
 #include "force.h"
+#include "spring.h"
 #include "render.h"
 #include "editor.h"
 
@@ -16,11 +17,16 @@
 
 int main(void)
 {
+	opBody* selectedBody = NULL;
+	opBody* connectBody = NULL;
+
 	InitWindow(1280, 720, "Physics Engine");
+	InitEditor();
+
 	SetTargetFPS(60);
 
 	// Initialize World
-	opGravity = (Vector2){ 0, -1 }; //0,30
+	opGravity = (Vector2){ 0, 0 }; //0,30
 	int selection = 0;
 
 	// Game Loop
@@ -39,63 +45,80 @@ int main(void)
 				selection = 0;
 			}
 		}
-		float angle;
+		//float angle;
 		Vector2 position = GetMousePosition();
 		opScreenZoom += GetMouseWheelMove() * 0.2f;
 		opScreenZoom = Clamp(opScreenZoom, 0.1f, 10);
 
 		UpdateEditor(position);
-		if (IsMouseButtonPressed(0))
+
+		selectedBody = GetBodyIntersect(opBodies, position);
+		if (selectedBody)
+		{
+			Vector2 screen = ConvertWorldToScreen(selectedBody->position);
+			DrawCircleLines((int)screen.x, (int)screen.y, ConvertWorldToPixel(selectedBody->mass) + 5, YELLOW);
+		}
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
 			switch (selection)
 			{
 				case 0:
 					for (int i = 0; i < 1; i++)
 					{
-						opBody* body = CreateBody();
-						body->position = ConvertScreenToWorld(position);
-						body->mass = GetRandomFloatValue(opEditorData.MassMinValue, opEditorData.MassMaxValue);
-						body->inverseMass = 1 / body->mass;
-						body->type = BT_DYNAMIC;
-						body->damping = 0.99f;
+						opBody* body = CreateBody(ConvertScreenToWorld(position), opEditorData.MassMinValue, opEditorData.BodyTypeActive);
+						body->damping = opEditorData.BodyDamping; //opEditorData.BodyDamping //0,10
 						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
-						body->gravityScale = 20;//
+						body->gravityScale = opEditorData.BodyGravity;// .GravityScaleValue 0,10
+						AddBody(body);
 						//ApplyForce(body, (Vector2) { GetRandomFloatValue(-200, 200), GetRandomFloatValue(-500, -1000) }, FM_VELOCITY);//
 					}
 					break;
 				case 1:
-					for (int i = 0; i < 100; i++)
-					{
-						opBody* body = CreateBody();
-						body->position = position;
-						body->mass = GetRandomFloatValue(1, 5);
-						body->inverseMass = 1 / body->mass;
-						body->type = BT_DYNAMIC;
-						body->damping = 0.99f;
-						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
-						body->gravityScale = 20;//
-						Vector2 force = Vector2Scale(GetVector2FromAngle(GetRandomFloatValue(0, 360) * DEG2RAD), GetRandomFloatValue(1000, 2000));
-						ApplyForce(body, force, FM_IMPULSE);//	
-					}
+					//for (int i = 0; i < 100; i++)
+					//{
+					//	opBody* body = CreateBody();
+					//	body->position = ConvertScreenToWorld(position);
+					//	body->mass = GetRandomFloatValue(opEditorData.MassMinValue, opEditorData.MassMaxValue);
+					//	body->inverseMass = 1 / body->mass;
+					//	body->type = BT_DYNAMIC;
+					//	body->damping = 0.99f;
+					//	body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
+					//	body->gravityScale = 20;//
+					//	Vector2 force = Vector2Scale(GetVector2FromAngle(GetRandomFloatValue(0, 360) * DEG2RAD), GetRandomFloatValue(10, 20));
+					//	ApplyForce(body, force, FM_IMPULSE);//	
+					//	AddBody(body);
+					//}
 					break;
-				case 2:
-					angle = GetRandomFloatValue(0, 360);
-					for (int i = 0; i < 100; i++)
-					{
-						opBody* body = CreateBody();
-						body->position = position;
-						body->mass = GetRandomFloatValue(0.1f, 1);
-						body->inverseMass = 1 / body->mass;
-						body->type = BT_DYNAMIC;
-						body->damping = 0.99f;
-						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
-						body->gravityScale = 20;//
-						Vector2 force = Vector2Scale(GetVector2FromAngle(angle + GetRandomFloatValue(-30, 30) * DEG2RAD), GetRandomFloatValue(1000, 2000));
-						ApplyForce(body, force, FM_IMPULSE);//	
-					}
-					break;
+				//case 2:
+				//	angle = GetRandomFloatValue(0, 360);
+				//	for (int i = 0; i < 100; i++)
+				//	{
+				//		opBody* body = CreateBody();
+				//		body->position = ConvertScreenToWorld(position);
+				//		body->mass = GetRandomFloatValue(opEditorData.MassMinValue, opEditorData.MassMaxValue);
+				//		body->inverseMass = 1 / body->mass;
+				//		body->type = BT_DYNAMIC;
+				//		body->damping = 0.99f;
+				//		body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
+				//		body->gravityScale = 20;//
+				//		Vector2 force = Vector2Scale(GetVector2FromAngle(angle + GetRandomFloatValue(-30, 30) * DEG2RAD), GetRandomFloatValue(10, 20));
+				//		ApplyForce(body, force, FM_IMPULSE);//	
+				//	}
+				//	break;
 			}
 
+		}
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && selectedBody) connectBody = selectedBody;
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && connectBody) DrawLineBodyToPosition(connectBody, position);
+		if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && connectBody)
+		{
+			if (selectedBody && selectedBody != connectBody)
+			{
+				opSpring_t* spring = CreateSpring(connectBody, selectedBody, Vector2Distance(connectBody->position, selectedBody->position), 20);
+				AddSpring(spring);
+			}
 		}
 
 		//opBody* body = opBodies;
@@ -107,6 +130,7 @@ int main(void)
 
 		// apply force opBodies
 		ApplyGravitation(opBodies, opEditorData.GravitationValue);
+		ApplySpringForce(opSprings);
 
 		// update opBodies
 		for (opBody* body = opBodies; body != NULL; body = body->next) //while not null
@@ -122,7 +146,7 @@ int main(void)
 		DrawText(TextFormat("FRAME: %.4f ", dt), 10, 30, 20, LIME);
 		DrawText(TextFormat("BODIES: %i ", opBodyCount), 10, 50, 20, LIME);
 		
-		DrawCircle((int)position.x, (int)position.y, 10, YELLOW);//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+		//DrawCircle((int)position.x, (int)position.y, 10, YELLOW);//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
 		// draw opBodies
 		for (opBody* body = opBodies; body != NULL; body = body->next) // do while we have a valid pointer, will be NULL at the end of the list
@@ -131,7 +155,15 @@ int main(void)
 			DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass), body->color);
 		}
 
-		DrawEditor();
+		// draw opSPrings
+		for (opSpring_t* spring = opSprings; spring != NULL; spring = spring->next) // do while we have a valid pointer, will be NULL at the end of the list
+		{
+			Vector2 screen1 = ConvertWorldToScreen(spring->body1->position);
+			Vector2 screen2 = ConvertWorldToScreen(spring->body2->position);
+			DrawLine((int)screen1.x, (int)screen1.y, (int)screen2.x, (int)screen2.y, YELLOW);
+		}
+
+		DrawEditor(position);
 		
 		EndDrawing();
 	}

@@ -9,26 +9,36 @@ opBody* opBodies = NULL;
 int opBodyCount = 0;
 Vector2 opGravity;
 
-opBody* CreateBody()
+opBody* CreateBody(Vector2 position, float mass, opBodyType bodyType)
 {
-	opBody* newBody = (opBody*)malloc(sizeof(opBody)); //*opBodyCount + 1
-	assert(newBody);
+	opBody* body = (opBody*)malloc(sizeof(opBody));
+	assert(body);
 
-	memset(newBody, 0, sizeof(opBody));
-
-	newBody->prev = NULL;
-	newBody->next = opBodies; //set to current head
-
-	if (opBodies != NULL)
-	{
-		opBodies->prev = opBodies; //set to current head
-	}
-
-	opBodies = newBody; //head is set to new body
-	opBodyCount++;
+	memset(body, 0, sizeof(opBody));
+	body->position = position;
+	body->mass = mass;
+	body->inverseMass = (bodyType == BT_DYNAMIC) ? 1 / mass : 0;
+	body->type = bodyType;
 	
-	return newBody;
+	//AddBody(body);
+	
+	return body;
 }
+
+void AddBody(opBody* body)
+{
+	assert(body);
+
+	body->prev = NULL;
+	body->next = opBodies; //set to current head
+
+	if (opBodies != NULL) opBodies->prev = opBodies; //set to current head
+
+
+	opBodies = body; //head is set to new body
+	opBodyCount++;
+}
+
 void DestroyBody(opBody* body)
 {
 	//Assert if provided opBody is not NULL

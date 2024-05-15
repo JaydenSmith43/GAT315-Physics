@@ -4,9 +4,9 @@
 
 typedef enum //unscoped
 {
-	BT_STATIC,
-	BT_KINEMATIC,
-	BT_DYNAMIC
+	BT_STATIC = 0,
+	BT_KINEMATIC = 1,
+	BT_DYNAMIC = 2
 } opBodyType;
 
 typedef enum
@@ -30,6 +30,9 @@ typedef struct opBody //define it is struct
 	float inverseMass; // 1/mass (static = 0)
 	float gravityScale;
 	float damping;
+
+	float restitution;
+
 	Color color;
 
 	struct opBody* next;
