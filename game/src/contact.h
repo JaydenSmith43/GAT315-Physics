@@ -3,8 +3,8 @@
 
 typedef struct opContact
 {
-	struct ncBody* body1;
-	struct ncBody* body2;
+	struct opBody* body1;
+	struct opBody* body2;
 
 	float restitution;
 	float depth;

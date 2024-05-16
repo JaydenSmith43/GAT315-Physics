@@ -77,7 +77,7 @@ opBody* GetBodyIntersect(opBody* bodies, Vector2 position)
     for (opBody* body = bodies; body; body = body->next)
     {
         Vector2 screen = ConvertWorldToScreen(body->position);
-        if (CheckCollisionPointCircle(position, screen, ConvertWorldToPixel(body->mass)))
+        if (CheckCollisionPointCircle(position, screen, ConvertWorldToPixel(body->mass * 0.5f)))
         {
             return body;
         }

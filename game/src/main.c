@@ -5,6 +5,8 @@
 #include "spring.h"
 #include "render.h"
 #include "editor.h"
+#include "collision.h"
+#include "contact.h"
 
 #include "raymath.h"
 #include "world.h"
@@ -56,7 +58,7 @@ int main(void)
 		if (selectedBody)
 		{
 			Vector2 screen = ConvertWorldToScreen(selectedBody->position);
-			DrawCircleLines((int)screen.x, (int)screen.y, ConvertWorldToPixel(selectedBody->mass) + 5, YELLOW);
+			DrawCircleLines((int)screen.x, (int)screen.y, ConvertWorldToPixel(selectedBody->mass * 0.5f) + 5, YELLOW);
 		}
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -138,6 +140,10 @@ int main(void)
 			Step(body, dt);
 		}
 
+		// collision
+		opContact_t* contacts = NULL;
+		CreateContacts(opBodies, &contacts);
+
 		// Render
 		BeginDrawing();
 		ClearBackground(BLACK); //RAYWHITE
@@ -148,19 +154,26 @@ int main(void)
 		
 		//DrawCircle((int)position.x, (int)position.y, 10, YELLOW);//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
-		// draw opBodies
-		for (opBody* body = opBodies; body != NULL; body = body->next) // do while we have a valid pointer, will be NULL at the end of the list
-		{
-			Vector2 screen = ConvertWorldToScreen(body->position);
-			DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass), body->color);
-		}
-
-		// draw opSPrings
+		// draw opSprings
 		for (opSpring_t* spring = opSprings; spring != NULL; spring = spring->next) // do while we have a valid pointer, will be NULL at the end of the list
 		{
 			Vector2 screen1 = ConvertWorldToScreen(spring->body1->position);
 			Vector2 screen2 = ConvertWorldToScreen(spring->body2->position);
 			DrawLine((int)screen1.x, (int)screen1.y, (int)screen2.x, (int)screen2.y, YELLOW);
+		}
+
+		// draw opBodies
+		for (opBody* body = opBodies; body != NULL; body = body->next) // do while we have a valid pointer, will be NULL at the end of the list
+		{
+			Vector2 screen = ConvertWorldToScreen(body->position);
+			DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass * 0.5f), body->color);
+		}
+
+		//draw contacts
+		for (opContact_t* contact = contacts; contact != NULL; contact = contact->next) // do while we have a valid pointer, will be NULL at the end of the list
+		{
+			Vector2 screen = ConvertWorldToScreen(contact->body1->position);
+			DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(contact->body1->mass * 0.5f), RED);
 		}
 
 		DrawEditor(position);
