@@ -61,7 +61,7 @@ int main(void)
 			DrawCircleLines((int)screen.x, (int)screen.y, ConvertWorldToPixel(selectedBody->mass * 0.5f) + 5, YELLOW);
 		}
 
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_CONTROL)))
 		{
 			switch (selection)
 			{
@@ -72,6 +72,7 @@ int main(void)
 						body->damping = opEditorData.BodyDamping; //opEditorData.BodyDamping //0,10
 						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
 						body->gravityScale = opEditorData.BodyGravity;// .GravityScaleValue 0,10
+						body->restitution = 0.8f; //bounciness
 						AddBody(body);
 						//ApplyForce(body, (Vector2) { GetRandomFloatValue(-200, 200), GetRandomFloatValue(-500, -1000) }, FM_VELOCITY);//
 					}
@@ -143,6 +144,8 @@ int main(void)
 		// collision
 		opContact_t* contacts = NULL;
 		CreateContacts(opBodies, &contacts);
+		SeparateContacts(contacts);
+		ResolveContacts(contacts);
 
 		// Render
 		BeginDrawing();
