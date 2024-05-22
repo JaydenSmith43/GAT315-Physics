@@ -1,11 +1,13 @@
 #include "world.h"
 #include "body.h"
+#include "contact.h"
 
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
 opBody* opBodies = NULL;
+opContact_t* contacts = NULL;
 int opBodyCount = 0;
 Vector2 opGravity;
 

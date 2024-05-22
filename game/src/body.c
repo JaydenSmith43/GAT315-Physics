@@ -10,7 +10,7 @@ void Step(opBody* body, float timestep)
 	SemiImplicitEuler(body, timestep);
 
 	//apply damping
-	float damping = 1/ (1 + body->damping * timestep);
+	float damping = 1 / (1 + body->damping * timestep);
 	body->velocity = Vector2Scale(body->velocity, damping);
 
 	ClearForce(body);

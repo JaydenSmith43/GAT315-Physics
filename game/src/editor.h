@@ -4,16 +4,20 @@
 typedef struct opEditorData
 {
 	Vector2 anchor01;
-	Vector2 anchor02;
 
 	bool EditorBoxActive;
-	float MassMinValue;
-	float MassMaxValue;
-	float GravitationValue;
-	bool BodyTypeEditMode;
-	int BodyTypeActive;
-	float BodyGravity;
-	float BodyDamping;
+    float Mass;
+    float BodyDamping;
+    bool BodyTypeEditMode;
+    int BodyTypeActive;
+    float BodyGravityScale;
+    float Stiffness;
+    float Restitution;
+    float Gravity;
+    float Gravitation;
+    float Timestep;
+    bool ResetPressed;
+    bool SimulatePressed;
 } opEditorData_t;
 
 extern opEditorData_t opEditorData;

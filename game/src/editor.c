@@ -4,6 +4,8 @@
 #define RAYGUI_IMPLEMENTATION
 #include "../../raygui/src/raygui.h"
 
+
+#define EDITOR_DATA(data)
 bool opEditorActive = true;
 bool opEditorIntersect = false;
 opEditorData_t opEditorData;
@@ -11,16 +13,20 @@ opEditorData_t opEditorData;
 Rectangle editorRect;
 
 Vector2 anchor01 = { 776, 48 };
-Vector2 anchor02 = { 792, 112 };
 
 bool EditorBoxActive = true;
-float MassMinValue = 0.0f;
-float MassMaxValue = 0.0f;
-float GravitationValue = 0.0f;
+float MassValue = 0.0f;
+float BodyDampingValue = 0.0f;
 bool BodyTypeEditMode = false;
 int BodyTypeActive = 0;
-float BodyGravity = 0.0f;
-float BodyDamping = 0.0f;
+float GravityScaleValue = 0.0f;
+float StiffnessValue = 0.0f;
+float RestitutionValue = 0.0f;
+float GravityValue = 0.0f;
+float GravitationValue = 0.0f;
+float TimestepValue = 0.0f;
+bool ResetPressed = false;
+bool SimulatePressed = false;
 
 Texture2D cursorTexture;
 
@@ -33,17 +39,23 @@ void InitEditor()
     UnloadImage(image);
     HideCursor();
 
-    opEditorData.anchor01 = (Vector2){ 776, 48 };
-    opEditorData.anchor02 = (Vector2){ 792, 112 };
+    opEditorData.anchor01 = (Vector2){ 744, 24 };
 
     opEditorData.EditorBoxActive = false;
-    opEditorData.GravitationValue = 0;
-    opEditorData.MassMinValue = 0.1f;
-    opEditorData.MassMaxValue = 1;
+    opEditorData.Mass = 0.1f;
+    opEditorData.BodyDamping = 0.0f;
     opEditorData.BodyTypeEditMode = false;
     opEditorData.BodyTypeActive = 0;
-    opEditorData.BodyGravity = 0.0f;
-    opEditorData.BodyDamping = 0.0f;
+    opEditorData.BodyGravityScale = 0.0f;
+    opEditorData.Restitution = 0.0f;
+    opEditorData.Stiffness = 0.0f;
+
+    opEditorData.Gravity = 0.0f;
+    opEditorData.Gravitation = 0.0f;
+    opEditorData.Timestep = 0.0f;
+
+    opEditorData.ResetPressed = false;
+    opEditorData.SimulatePressed = true;
 }
 
 void UpdateEditor(Vector2 position)
@@ -55,6 +67,23 @@ void DrawEditor(Vector2 position)
 {
     if (EditorBoxActive)
     {
+        EditorBoxActive = !GuiWindowBox((Rectangle) { anchor01.x + 0, anchor01.y + 0, 312, 512 }, "Editor");
+        GuiSliderBar((Rectangle) { anchor01.x + 128, anchor01.y + 120, 120, 16 }, "Mass", NULL, & opEditorData.Mass, 0.2f, 5);
+        GuiGroupBox((Rectangle) { anchor01.x + 24, anchor01.y + 48, 264, 232 }, "Body");
+        GuiGroupBox((Rectangle) { anchor01.x + 24, anchor01.y + 312, 264, 112 }, "World");
+        GuiSliderBar((Rectangle) { anchor01.x + 128, anchor01.y + 144, 120, 16 }, "Damping", NULL, & opEditorData.BodyDamping, 0, 10);
+        GuiSliderBar((Rectangle) { anchor01.x + 128, anchor01.y + 168, 120, 16 }, "Gravity Scale", NULL, & opEditorData.BodyGravityScale, 0, 100);
+        GuiSliderBar((Rectangle) { anchor01.x + 128, anchor01.y + 192, 120, 16 }, "Stiffness (k)", NULL, & opEditorData.Stiffness, 0, 100);
+        GuiSliderBar((Rectangle) { anchor01.x + 128, anchor01.y + 216, 120, 16 }, "Restitution", NULL, & opEditorData.Restitution, 0, 100);
+        GuiSlider((Rectangle) { anchor01.x + 120, anchor01.y + 328, 128, 16 }, "Gravity", NULL, & opEditorData.Gravity, 0, 100);
+        GuiSlider((Rectangle) { anchor01.x + 120, anchor01.y + 352, 128, 16 }, "Gravitation", NULL, & opEditorData.Gravitation, 0, 100);
+        GuiSliderBar((Rectangle) { anchor01.x + 120, anchor01.y + 376, 128, 16 }, "Timestep", NULL, & opEditorData.Timestep, 0, 100);
+        ResetPressed = GuiButton((Rectangle) { anchor01.x + 24, anchor01.y + 456, 120, 24 }, "Reset");
+        SimulatePressed = GuiButton((Rectangle) { anchor01.x + 168, anchor01.y + 456, 120, 24 }, "Simulate");
+        if (GuiDropdownBox((Rectangle) { anchor01.x + 64, anchor01.y + 64, 184, 32 }, "STATIC;KINEMATIC;DYNAMIC", & opEditorData.BodyTypeActive, opEditorData.BodyTypeEditMode)) opEditorData.BodyTypeEditMode = !opEditorData.BodyTypeEditMode;
+    }
+
+    /*
         EditorBoxActive = !GuiWindowBox((Rectangle) { opEditorData.anchor01.x + 0, opEditorData.anchor01.y + 0, 304, 664 }, "Editor");
         GuiSliderBar((Rectangle) { opEditorData.anchor01.x + 120, opEditorData.anchor01.y + 72, 120, 16 }, "Body Mass Min", NULL, & opEditorData.MassMinValue, 0, 5);
         GuiSliderBar((Rectangle) { opEditorData.anchor01.x + 120, opEditorData.anchor01.y + 104, 120, 16 }, "Body Mass Max", NULL, & opEditorData.MassMaxValue, 0, 5);
@@ -64,8 +93,7 @@ void DrawEditor(Vector2 position)
         GuiSliderBar((Rectangle) { opEditorData.anchor01.x + 120, opEditorData.anchor01.y + 136, 120, 16 }, "Body Gravity", NULL, & opEditorData.BodyGravity, 0, 100);
         GuiSliderBar((Rectangle) { opEditorData.anchor01.x + 120, opEditorData.anchor01.y + 168, 120, 16 }, "Body Damping", NULL, & opEditorData.BodyDamping, 0, 10);
         if (GuiDropdownBox((Rectangle) { opEditorData.anchor01.x + 32, opEditorData.anchor01.y + 200, 208, 16 }, "STATIC;KINEMATIC;DYNAMIC", & opEditorData.BodyTypeActive, opEditorData.BodyTypeEditMode)) opEditorData.BodyTypeEditMode = !opEditorData.BodyTypeEditMode;
-    }
-    GuiGroupBox((Rectangle) { opEditorData.anchor02.x + 0, opEditorData.anchor02.y + 0, 256, 176 }, "Body");
+    */
 
     DrawTexture(cursorTexture, position.x - cursorTexture.width / 2, position.y - cursorTexture.height / 2, WHITE);
     

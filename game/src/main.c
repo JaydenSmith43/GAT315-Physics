@@ -21,15 +21,17 @@ int main(void)
 {
 	opBody* selectedBody = NULL;
 	opBody* connectBody = NULL;
-
+		
 	InitWindow(1280, 720, "Physics Engine");
 	InitEditor();
 
 	SetTargetFPS(60);
 
 	// Initialize World
-	opGravity = (Vector2){ 0, 0 }; //0,30
-	int selection = 0;
+	opGravity = (Vector2){ 0, 30 }; //0,30
+
+	float fixedTimeStep = 1.0f / 20;
+	float timeAccumulator = 0.0f;
 
 	// Game Loop
 	while (!WindowShouldClose())
@@ -38,15 +40,6 @@ int main(void)
 		float dt = GetFrameTime();
 		float fps = (float)GetFPS();
 
-		if (IsKeyPressed('W'))
-		{
-			selection++;
-
-			if (selection == 3)
-			{
-				selection = 0;
-			}
-		}
 		//float angle;
 		Vector2 position = GetMousePosition();
 		opScreenZoom += GetMouseWheelMove() * 0.2f;
@@ -63,54 +56,16 @@ int main(void)
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_CONTROL)))
 		{
-			switch (selection)
+			for (int i = 0; i < 1; i++)
 			{
-				case 0:
-					for (int i = 0; i < 1; i++)
-					{
-						opBody* body = CreateBody(ConvertScreenToWorld(position), opEditorData.MassMinValue, opEditorData.BodyTypeActive);
-						body->damping = opEditorData.BodyDamping; //opEditorData.BodyDamping //0,10
-						body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
-						body->gravityScale = opEditorData.BodyGravity;// .GravityScaleValue 0,10
-						body->restitution = 0.8f; //bounciness
-						AddBody(body);
-						//ApplyForce(body, (Vector2) { GetRandomFloatValue(-200, 200), GetRandomFloatValue(-500, -1000) }, FM_VELOCITY);//
-					}
-					break;
-				case 1:
-					//for (int i = 0; i < 100; i++)
-					//{
-					//	opBody* body = CreateBody();
-					//	body->position = ConvertScreenToWorld(position);
-					//	body->mass = GetRandomFloatValue(opEditorData.MassMinValue, opEditorData.MassMaxValue);
-					//	body->inverseMass = 1 / body->mass;
-					//	body->type = BT_DYNAMIC;
-					//	body->damping = 0.99f;
-					//	body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
-					//	body->gravityScale = 20;//
-					//	Vector2 force = Vector2Scale(GetVector2FromAngle(GetRandomFloatValue(0, 360) * DEG2RAD), GetRandomFloatValue(10, 20));
-					//	ApplyForce(body, force, FM_IMPULSE);//	
-					//	AddBody(body);
-					//}
-					break;
-				//case 2:
-				//	angle = GetRandomFloatValue(0, 360);
-				//	for (int i = 0; i < 100; i++)
-				//	{
-				//		opBody* body = CreateBody();
-				//		body->position = ConvertScreenToWorld(position);
-				//		body->mass = GetRandomFloatValue(opEditorData.MassMinValue, opEditorData.MassMaxValue);
-				//		body->inverseMass = 1 / body->mass;
-				//		body->type = BT_DYNAMIC;
-				//		body->damping = 0.99f;
-				//		body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
-				//		body->gravityScale = 20;//
-				//		Vector2 force = Vector2Scale(GetVector2FromAngle(angle + GetRandomFloatValue(-30, 30) * DEG2RAD), GetRandomFloatValue(10, 20));
-				//		ApplyForce(body, force, FM_IMPULSE);//	
-				//	}
-				//	break;
+				opBody* body = CreateBody(ConvertScreenToWorld(position), opEditorData.Mass, opEditorData.BodyTypeActive);
+				body->damping = opEditorData.BodyDamping; //opEditorData.BodyDamping //0,10
+				body->color = (Color){ GetRandomValue(0, 255), GetRandomValue(0, 255), GetRandomValue(0, 255), 255 };
+				body->gravityScale = -opEditorData.BodyGravityScale;// .GravityScaleValue 0,10
+				body->restitution = 0.8f; //bounciness
+				AddBody(body);
+				//ApplyForce(body, (Vector2) { GetRandomFloatValue(-200, 200), GetRandomFloatValue(-500, -1000) }, FM_VELOCITY);//
 			}
-
 		}
 
 		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && selectedBody) connectBody = selectedBody;
@@ -131,21 +86,27 @@ int main(void)
 		//	body = body->next;
 		//}
 
-		// apply force opBodies
-		ApplyGravitation(opBodies, opEditorData.GravitationValue);
-		ApplySpringForce(opSprings);
-
-		// update opBodies
-		for (opBody* body = opBodies; body != NULL; body = body->next) //while not null
+		timeAccumulator += dt;
+		while (timeAccumulator >= fixedTimeStep)
 		{
-			Step(body, dt);
-		}
+			timeAccumulator -= fixedTimeStep;
+			
+			// apply force opBodies
+			ApplyGravitation(opBodies, opEditorData.Gravitation);
+			ApplySpringForce(opSprings);
 
-		// collision
-		opContact_t* contacts = NULL;
-		CreateContacts(opBodies, &contacts);
-		SeparateContacts(contacts);
-		ResolveContacts(contacts);
+			// update opBodies
+			for (opBody* body = opBodies; body != NULL; body = body->next) //while not null
+			{
+				Step(body, fixedTimeStep);
+			}
+
+			// collision
+			contacts = NULL;
+			CreateContacts(opBodies, &contacts);
+			SeparateContacts(contacts);
+			ResolveContacts(contacts);
+		}
 
 		// Render
 		BeginDrawing();

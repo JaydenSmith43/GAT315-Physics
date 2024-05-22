@@ -4,9 +4,9 @@
 
 typedef enum //unscoped
 {
-	BT_STATIC = 0,
-	BT_KINEMATIC = 1,
-	BT_DYNAMIC = 2
+	BT_STATIC,
+	BT_KINEMATIC,
+	BT_DYNAMIC
 } opBodyType;
 
 typedef enum
