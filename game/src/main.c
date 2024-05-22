@@ -30,7 +30,7 @@ int main(void)
 	// Initialize World
 	opGravity = (Vector2){ 0, 30 }; //0,30
 
-	float fixedTimeStep = 1.0f / 20;
+	float fixedTimeStep;
 	float timeAccumulator = 0.0f;
 
 	// Game Loop
@@ -44,6 +44,7 @@ int main(void)
 		Vector2 position = GetMousePosition();
 		opScreenZoom += GetMouseWheelMove() * 0.2f;
 		opScreenZoom = Clamp(opScreenZoom, 0.1f, 10);
+		float fixedTimeStep = 1.0f / opEditorData.Timestep;
 
 		UpdateEditor(position);
 
@@ -90,22 +91,24 @@ int main(void)
 		while (timeAccumulator >= fixedTimeStep)
 		{
 			timeAccumulator -= fixedTimeStep;
-			
-			// apply force opBodies
-			ApplyGravitation(opBodies, opEditorData.Gravitation);
-			ApplySpringForce(opSprings);
-
-			// update opBodies
-			for (opBody* body = opBodies; body != NULL; body = body->next) //while not null
+			if (opEditorData.SimulateToggleActive)
 			{
-				Step(body, fixedTimeStep);
-			}
+				// apply force opBodies
+				//ApplyGravitation(opBodies, opEditorData.Gravitation);
+				ApplySpringForce(opSprings);
 
-			// collision
-			contacts = NULL;
-			CreateContacts(opBodies, &contacts);
-			SeparateContacts(contacts);
-			ResolveContacts(contacts);
+				// update opBodies
+				for (opBody* body = opBodies; body != NULL; body = body->next) //while not null
+				{
+					Step(body, fixedTimeStep);
+				}
+
+				// collision
+				contacts = NULL;
+				CreateContacts(opBodies, &contacts);
+				SeparateContacts(contacts);
+				ResolveContacts(contacts);
+			}
 		}
 
 		// Render

@@ -26,7 +26,7 @@ float GravityValue = 0.0f;
 float GravitationValue = 0.0f;
 float TimestepValue = 0.0f;
 bool ResetPressed = false;
-bool SimulatePressed = false;
+bool SimulateToggleActive = true;
 
 Texture2D cursorTexture;
 
@@ -55,7 +55,7 @@ void InitEditor()
     opEditorData.Timestep = 0.0f;
 
     opEditorData.ResetPressed = false;
-    opEditorData.SimulatePressed = true;
+    opEditorData.SimulateToggleActive = true;
 }
 
 void UpdateEditor(Vector2 position)
@@ -79,7 +79,7 @@ void DrawEditor(Vector2 position)
         GuiSlider((Rectangle) { anchor01.x + 120, anchor01.y + 352, 128, 16 }, "Gravitation", NULL, & opEditorData.Gravitation, 0, 100);
         GuiSliderBar((Rectangle) { anchor01.x + 120, anchor01.y + 376, 128, 16 }, "Timestep", NULL, & opEditorData.Timestep, 0, 100);
         ResetPressed = GuiButton((Rectangle) { anchor01.x + 24, anchor01.y + 456, 120, 24 }, "Reset");
-        SimulatePressed = GuiButton((Rectangle) { anchor01.x + 168, anchor01.y + 456, 120, 24 }, "Simulate");
+        GuiToggle((Rectangle) { anchor01.x + 168, anchor01.y + 456, 120, 24 }, "Simulate", & opEditorData.SimulateToggleActive);
         if (GuiDropdownBox((Rectangle) { anchor01.x + 64, anchor01.y + 64, 184, 32 }, "STATIC;KINEMATIC;DYNAMIC", & opEditorData.BodyTypeActive, opEditorData.BodyTypeEditMode)) opEditorData.BodyTypeEditMode = !opEditorData.BodyTypeEditMode;
     }
 

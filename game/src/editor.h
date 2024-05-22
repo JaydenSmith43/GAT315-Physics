@@ -17,7 +17,7 @@ typedef struct opEditorData
     float Gravitation;
     float Timestep;
     bool ResetPressed;
-    bool SimulatePressed;
+    bool SimulateToggleActive;
 } opEditorData_t;
 
 extern opEditorData_t opEditorData;
